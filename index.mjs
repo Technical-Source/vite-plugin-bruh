@@ -88,7 +88,7 @@ export const bruhBuild = ({ root } = {}) => {
       if (!idToHtmlRenderFile[id])
         return
 
-      const { default: render } = await import(path.join(root, idToHtmlRenderFile[id]))
+      const { default: render } = await import(idToHtmlRenderFile[id])
       const rendered = await render()
       return {
         code: rendered,
@@ -102,10 +102,10 @@ export const bruhBuild = ({ root } = {}) => {
 
       const input = Object.fromEntries(
         htmlRenderFiles
-          .map(pathname => path.relative(root, pathname))
-          .map(pathname =>
-            [pathname.replace(".html.mjs", ""), "./" + pathname]
-          )
+          .map(pathname => {
+            const name = path.relative(root, pathname).replace(".html.mjs", "")
+            return [name, pathname]
+          })
       )
 
       return {
