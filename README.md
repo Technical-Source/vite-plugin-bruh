@@ -2,7 +2,7 @@
 
 ## Install
 
-`npm i -D vite-plugin-bruh` or use `npm init bruh` with the `vite-ssr` template to quickly get started.
+`npm i -D vite-plugin-bruh` or use `npm init bruh` with the `vite` template to quickly get started.
 
 ## Use
 
@@ -85,3 +85,18 @@ touch prerendering the html.
 
 Keep in mind that until (if) vite allows dynamic entry points, the `x.html.mjs` files must be be executable by node directly.
 This means no jsx or vite-specific tooling within these files and their imports.
+
+Also, vite currently needs an explicit array of node core modules that it should allow to passthrough its module graph.
+You need to specify them in the `external` option, the defaults are just `["fs", "path", "crypto"]` right now.
+
+If you want to use `import.meta.url`, vite will currently give a (non URL!) absolute path that is "relative" to your vite `root`.
+The easiest workaround is to just do something like this:
+```javascript
+import path from "path"
+
+// A path relative to where the `vite` command is run
+path.resolve("a/path/relative/to/the/vite/currentWorkingDirectory")
+
+// Instead of what you would expect to work
+new URL("a/path/relative/to/this/file", import.meta.url).pathname
+```

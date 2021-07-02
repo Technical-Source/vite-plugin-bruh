@@ -33,7 +33,7 @@ const getHtmlRenderFiles = async (directory, maxDepth = Infinity) => {
   }
 }
 
-export const bruhDev = ({ root } = {}) => {
+export const bruhDev = ({ root, external } = {}) => {
   const urlToHtmlRenderFile = async url => {
     const pathname = path.join(root, path.normalize(url))
     const htmlRenderFiles = await getHtmlRenderFiles(path.dirname(pathname), 2)
@@ -50,6 +50,14 @@ export const bruhDev = ({ root } = {}) => {
     name: "bruh-dev",
     apply: "serve",
     enforce: "pre",
+
+    config() {
+      return {
+        ssr: {
+          external
+        }
+      }
+    },
 
     configureServer(viteDevServer) {
       viteDevServer.middlewares.use(async (req, res, next) => {
@@ -144,9 +152,15 @@ export const bruhJSX = () => {
   }
 }
 
-export const bruh = ({ root } = {}) =>
+export const bruh = ({
+  root,
+  external = []
+} = {}) =>
   [
-    bruhDev({ root }),
+    bruhDev({
+      root,
+      external: ["fs", "path", "crypto", ...external]
+    }),
     bruhBuild({ root }),
     bruhJSX()
   ]
