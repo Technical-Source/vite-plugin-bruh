@@ -53,16 +53,25 @@ export const bruhDev = ({ root } = {}) => {
 
     configureServer(viteDevServer) {
       viteDevServer.middlewares.use(async (req, res, next) => {
-        const htmlRenderFile = await urlToHtmlRenderFile(req.url)
-        if (htmlRenderFile) {
-          const { default: render } = await viteDevServer.ssrLoadModule(htmlRenderFile)
-          const rendered = await render()
-          const transformedHTML = await viteDevServer.transformIndexHtml(req.url, rendered.toString())
+        try {
+          const htmlRenderFile = await urlToHtmlRenderFile(req.url)
+          if (htmlRenderFile) {
+            const { default: render } = await viteDevServer.ssrLoadModule(htmlRenderFile)
+            const rendered = await render()
+            const transformedHTML = await viteDevServer.transformIndexHtml(req.url, rendered.toString())
 
-          res.setHeader("Content-Type", "text/html")
-          return res.end(transformedHTML)
+            res.setHeader("Content-Type", "text/html")
+            return res.end(transformedHTML)
+          }
+          next()
         }
-        next()
+        catch (error) {
+          viteDevServer.ssrFixStacktrace(error)
+          console.error(error)
+
+          res.statusCode = 500
+          return res.end(error.stack)
+        }
       })
     }
   }
