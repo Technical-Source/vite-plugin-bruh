@@ -1,5 +1,6 @@
 import fs from "fs/promises"
 import path from "path"
+import vite from "vite"
 
 const excludeEntry = (entry, directory) =>
   entry.isDirectory() && entry.name == "node_modules"
@@ -37,7 +38,8 @@ export const bruhDev = ({ root, external } = {}) => {
   let config = {}
 
   const urlToHtmlRenderFile = async url => {
-    const pathname = path.join(root || config.root, path.normalize(url))
+    const resolvedRoot = root || path.resolve(config.root)
+    const pathname = path.join(resolvedRoot, path.normalize(url))
     const htmlRenderFiles = await getHtmlRenderFiles(path.dirname(pathname), 2)
     for (const htmlRenderFile of htmlRenderFiles) {
       const htmlRenderFileName = htmlRenderFile.replace(".html.mjs", "")
@@ -92,7 +94,8 @@ export const bruhDev = ({ root, external } = {}) => {
 }
 
 export const bruhBuild = ({ root } = {}) => {
-  let config = {}
+  let viteDevServer
+
   const idToHtmlRenderFile = {}
 
   return {
@@ -100,8 +103,8 @@ export const bruhBuild = ({ root } = {}) => {
     apply: "build",
     enforce: "pre",
 
-    configResolved(resolvedConfig) {
-      config = resolvedConfig
+    async buildStart() {
+      viteDevServer = await vite.createServer()
     },
 
     async resolveId(source) {
@@ -116,7 +119,7 @@ export const bruhBuild = ({ root } = {}) => {
       if (!idToHtmlRenderFile[id])
         return
 
-      const { default: render } = await import(idToHtmlRenderFile[id])
+      const { default: render } = await viteDevServer.ssrLoadModule(idToHtmlRenderFile[id])
       const rendered = await render()
       return {
         code: rendered,
@@ -124,14 +127,19 @@ export const bruhBuild = ({ root } = {}) => {
       }
     },
 
+    async closeBundle() {
+      return viteDevServer.close()
+    },
+
     // Add all page render files to the build inputs
-    async config() {
-      const htmlRenderFiles = await getHtmlRenderFiles(root || config.root)
+    async config(config) {
+      const resolvedRoot = root || path.resolve(config.root)
+      const htmlRenderFiles = await getHtmlRenderFiles(resolvedRoot)
 
       const input = Object.fromEntries(
         htmlRenderFiles
           .map(pathname => {
-            const name = path.relative(root || config.root, pathname).replace(".html.mjs", "")
+            const name = path.relative(resolvedRoot, pathname).replace(".html.mjs", "")
             return [name, pathname]
           })
       )

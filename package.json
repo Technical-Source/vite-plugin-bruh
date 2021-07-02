@@ -1,11 +1,9 @@
 {
   "name": "vite-plugin-bruh",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "description": "A vite plugin to integrate with bruh",
   "type": "module",
   "main": "./index.mjs",
-  "dependencies": {},
-  "devDependencies": {},
   "scripts": {},
   "homepage": "https://github.com/Technical-Source/vite-plugin-bruh",
   "repository": "https://github.com/Technical-Source/vite-plugin-bruh.git",
@@ -19,5 +17,8 @@
     "name": "Daniel Ethridge",
     "url": "https://git.io/de"
   },
-  "license": "MIT"
+  "license": "MIT",
+  "peerDependencies": {
+    "vite": "~2.0"
+  }
 }
