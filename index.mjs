@@ -38,7 +38,7 @@ export const bruhDev = ({ htmlRenderFileExtention, root, external } = {}) => {
   let config = {}
 
   const urlToHtmlRenderFile = async url => {
-    const resolvedRoot = root || path.resolve(config.root)
+    const resolvedRoot = root || path.resolve(config.root || "")
     const pathname = path.join(resolvedRoot, path.normalize(url))
     const htmlRenderFiles = await getHtmlRenderFiles(path.dirname(pathname), htmlRenderFileExtention, 2)
     for (const htmlRenderFile of htmlRenderFiles) {
@@ -133,7 +133,7 @@ export const bruhBuild = ({ htmlRenderFileExtention, root } = {}) => {
 
     // Add all page render files to the build inputs
     async config(config) {
-      const resolvedRoot = root || path.resolve(config.root)
+      const resolvedRoot = root || path.resolve(config.root || "")
       const htmlRenderFiles = await getHtmlRenderFiles(resolvedRoot, htmlRenderFileExtention)
 
       const input = Object.fromEntries(
