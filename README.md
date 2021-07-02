@@ -14,7 +14,15 @@ import bruh from "vite-plugin-bruh"
 export default defineConfig({
   plugins: [
     bruh({
-      /* options here */
+      // Regex for the page render file extention
+      // Defaults to /\.html\.(mjs|jsx?|tsx?)$/
+      htmlRenderFileExtention,
+      // Absolute path of the root pages directory
+      // Defaults to vite's root
+      root,
+      // A (hopefully) temporary workaround of allowed node module imports
+      // Adds to the default array of ["fs", "path", "crypto"]
+      external
     })
   ]
 })
@@ -27,7 +35,7 @@ Here is an example project structure:
 ```
 .
 ├── index.css
-├── index.html.mjs
+├── index.html.jsx
 ├── index.mjs
 ├── package-lock.json
 ├── package.json
@@ -37,7 +45,7 @@ Here is an example project structure:
 ## How it works
 
 Upon a page request for `/x` in dev:
-1. The `x.html.mjs` (or `x/index.html.mjs`) file is imported
+1. The `x.html.mjs` (or `x/index.html.mjs`, `...js/jsx/ts/tsx`) file is imported
 2. The default export is called and `await`ed
 3. The returned string is exposed to vite as if it were from `x.html` (or `x/index.html`)
 
@@ -75,18 +83,14 @@ Vite sees this as if `index.html` existed and contained:
 
 During dev, vite will automatically and quickly reload the page as `index.html.mjs` and its imports are edited.
 
-## JSX
+## JSX/TSX
 
-This plugin automatically includes jsx support for bruh in all other files that vite handles as typically used.
-In practice, this just means that you can use JSX and vite-specific tooling in all files except those that
-touch prerendering the html.
+This plugin automatically includes jsx support for bruh, meaning that you can freely write jsx content in both
+render files (`x.html.jsx`) and hydrate files (`x.jsx`, what vite typically handles).
 
 ## Current Caveats
 
-Keep in mind that until (if) vite allows dynamic entry points, the `x.html.mjs` files must be be executable by node directly.
-This means no jsx or vite-specific tooling within these files and their imports.
-
-Also, vite currently needs an explicit array of node core modules that it should allow to passthrough its module graph.
+Vite currently needs an explicit array of node core modules that it should allow to passthrough its module graph.
 You need to specify them in the `external` option, the defaults are just `["fs", "path", "crypto"]` right now.
 
 If you want to use `import.meta.url`, vite will currently give a (non URL!) absolute path that is "relative" to your vite `root`.

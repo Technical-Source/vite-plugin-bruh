@@ -5,7 +5,7 @@ import vite from "vite"
 const excludeEntry = (entry, directory) =>
   entry.isDirectory() && entry.name == "node_modules"
 
-const getHtmlRenderFiles = async (directory, maxDepth = Infinity) => {
+const getHtmlRenderFiles = async (directory, htmlRenderFileExtention, maxDepth = Infinity) => {
   if (maxDepth < 1)
     return []
 
@@ -20,8 +20,8 @@ const getHtmlRenderFiles = async (directory, maxDepth = Infinity) => {
           const entryPath = path.join(directory, entry.name)
 
           if (entry.isDirectory())
-            return getHtmlRenderFiles(entryPath, maxDepth - 1)
-          if (entry.name.endsWith(".html.mjs"))
+            return getHtmlRenderFiles(entryPath, htmlRenderFileExtention, maxDepth - 1)
+          if (htmlRenderFileExtention.test(entry.name))
             return [entryPath]
 
           return []
@@ -34,15 +34,15 @@ const getHtmlRenderFiles = async (directory, maxDepth = Infinity) => {
   }
 }
 
-export const bruhDev = ({ root, external } = {}) => {
+export const bruhDev = ({ htmlRenderFileExtention, root, external } = {}) => {
   let config = {}
 
   const urlToHtmlRenderFile = async url => {
     const resolvedRoot = root || path.resolve(config.root)
     const pathname = path.join(resolvedRoot, path.normalize(url))
-    const htmlRenderFiles = await getHtmlRenderFiles(path.dirname(pathname), 2)
+    const htmlRenderFiles = await getHtmlRenderFiles(path.dirname(pathname), htmlRenderFileExtention, 2)
     for (const htmlRenderFile of htmlRenderFiles) {
-      const htmlRenderFileName = htmlRenderFile.replace(".html.mjs", "")
+      const htmlRenderFileName = htmlRenderFile.replace(htmlRenderFileExtention, "")
       if (htmlRenderFileName == pathname)
         return htmlRenderFile
       if (htmlRenderFileName == path.join(pathname, "index"))
@@ -93,7 +93,7 @@ export const bruhDev = ({ root, external } = {}) => {
   }
 }
 
-export const bruhBuild = ({ root } = {}) => {
+export const bruhBuild = ({ htmlRenderFileExtention, root } = {}) => {
   let viteDevServer
 
   const idToHtmlRenderFile = {}
@@ -108,8 +108,8 @@ export const bruhBuild = ({ root } = {}) => {
     },
 
     async resolveId(source) {
-      if (source.endsWith(".html.mjs")) {
-        const id = source.replace(".html.mjs", ".html")
+      if (htmlRenderFileExtention.test(source)) {
+        const id = source.replace(htmlRenderFileExtention, ".html")
         idToHtmlRenderFile[id] = source
         return id
       }
@@ -134,12 +134,12 @@ export const bruhBuild = ({ root } = {}) => {
     // Add all page render files to the build inputs
     async config(config) {
       const resolvedRoot = root || path.resolve(config.root)
-      const htmlRenderFiles = await getHtmlRenderFiles(resolvedRoot)
+      const htmlRenderFiles = await getHtmlRenderFiles(resolvedRoot, htmlRenderFileExtention)
 
       const input = Object.fromEntries(
         htmlRenderFiles
           .map(pathname => {
-            const name = path.relative(resolvedRoot, pathname).replace(".html.mjs", "")
+            const name = path.relative(resolvedRoot, pathname).replace(htmlRenderFileExtention, "")
             return [name, pathname]
           })
       )
@@ -172,15 +172,20 @@ export const bruhJSX = () => {
 }
 
 export const bruh = ({
+  htmlRenderFileExtention = /\.html\.(mjs|jsx?|tsx?)$/,
   root,
   external = []
 } = {}) =>
   [
     bruhDev({
+      htmlRenderFileExtention,
       root,
       external: ["fs", "path", "crypto", ...external]
     }),
-    bruhBuild({ root }),
+    bruhBuild({
+      htmlRenderFileExtention,
+      root
+    }),
     bruhJSX()
   ]
 
