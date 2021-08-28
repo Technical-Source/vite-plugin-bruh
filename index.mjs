@@ -1,6 +1,41 @@
 import fs from "fs/promises"
 import path from "path"
 import vite from "vite"
+import { compile } from "xdm"
+
+const mdx = ({ rehypePlugins = [] } = {}) => {
+  return {
+    name: "bruh-mdx",
+    enforce: "pre",
+
+    async transform(source, id) {
+      if (!id.endsWith(".mdx"))
+        return
+      
+      const result = await compile(source, {
+        rehypePlugins,
+        jsxRuntime: "classic",
+        pragma: "h",
+        pragmaFrag: "JSXFragment"
+      })
+
+      const code = result.contents
+        .replace(
+          `import h from "react"`,
+          `import { h, JSXFragment } from "bruh/dom/meta-node"`
+        )
+        .replace(
+          /classname/igm,
+          "class"
+        )
+
+      return {
+        code,
+        map: { mappings: "" }
+      }
+    }
+  }
+}
 
 const excludeEntry = (entry, directory) =>
   entry.isDirectory() && entry.name == "node_modules"
@@ -177,6 +212,7 @@ export const bruh = ({
   external = []
 } = {}) =>
   [
+    mdx(),
     bruhDev({
       htmlRenderFileExtention,
       root,
