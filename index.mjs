@@ -11,7 +11,7 @@ const mdx = ({ rehypePlugins = [] } = {}) => {
     async transform(source, id) {
       if (!id.endsWith(".mdx"))
         return
-      
+
       const result = await compile(source, {
         rehypePlugins,
         jsxRuntime: "classic",
@@ -22,7 +22,7 @@ const mdx = ({ rehypePlugins = [] } = {}) => {
       const code = result.contents
         .replace(
           `import h from "react"`,
-          `import { h, JSXFragment } from "bruh/dom/meta-node"`
+          `import { h, JSXFragment } from "bruh/dom"`
         )
         .replace(
           /classname/igm,
@@ -199,7 +199,7 @@ export const bruhJSX = () => {
         esbuild: {
           jsxFactory: "h",
           jsxFragment: "JSXFragment",
-          jsxInject: `import { h, JSXFragment } from "bruh/dom/meta-node"`
+          jsxInject: `import { h, JSXFragment } from "bruh/dom"`
         }
       }
     }
